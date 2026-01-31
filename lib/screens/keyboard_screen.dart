@@ -11,20 +11,67 @@ class KeyboardScreen extends StatefulWidget {
 
 class _KeyboardScreenState extends State<KeyboardScreen> {
   final TextEditingController _controller = TextEditingController();
-  final List<String> _macros = ["Hello World", "ls -la\n", "exit\n", "sudo suo\n"]; // Example macros
+  final List<String> _macros = ["Hello World", "ls -la", "exit", "sudo su"]; 
+  
+  bool _appendNewline = true;
+  final Set<String> _activeModifiers = {};
 
   void _sendText(String text) {
     if (text.isEmpty) return;
-    context.read<BleService>().sendCommand("TYPE", text);
+    
+    String payload = text;
+    if (_appendNewline) {
+      // If we are appending newline, we assume the intention is to "Enter"
+      // But if it's a modifier combo, usually applied to a key.
+      // If modifiers are active, we treat 'text' as the key if length 1.
+      if (!payload.endsWith('\n')) {
+          payload += '\n';
+      }
+    }
+    
+    if (_activeModifiers.isNotEmpty) {
+      // Send as COMBO
+      // Format: COMBO:MOD1,MOD2,KEY
+      // Note: If text is a long string + modifiers, it's usually invalid in HID context (modifiers apply to single keystrokes).
+      // We will blindly send it and expect firmware to handle or user to know.
+      // But practically, "Ctrl" + "c" is valid. "Ctrl" + "Hello" is weird (Ctrl+H, Ctrl+e...).
+      // We'll join commands.
+      String mods = _activeModifiers.join(",");
+      context.read<BleService>().sendCommand("COMBO", "$mods,$payload");
+      
+      // Auto-clear modifiers after use (Sticky keys behavior)
+      setState(() {
+        _activeModifiers.clear();
+      });
+    } else {
+      context.read<BleService>().sendCommand("TYPE", payload);
+    }
   }
+
+
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
+        // Options Row
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Row(
+            children: [
+               const Text("Append Newline"),
+               Checkbox(
+                 value: _appendNewline, 
+                 onChanged: (v) => setState(() => _appendNewline = v!)
+               ),
+               const Spacer(),
+            ],
+          ),
+        ),
+
         // Real-time typing area
         Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: TextField(
             controller: _controller,
             decoration: InputDecoration(
@@ -53,13 +100,81 @@ class _KeyboardScreenState extends State<KeyboardScreen> {
         
         // Quick Actions / Macros
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0),
-          child: Text("Quick Actions", style: Theme.of(context).textTheme.titleMedium),
+          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text("Quick Actions", style: Theme.of(context).textTheme.titleMedium),
+            ],
+          ),
         ),
+        
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _actionButton("Win Term", () async {
+                 // Win+R, "cmd", Enter
+                 await context.read<BleService>().sendCommand("COMBO", "GUI,r"); 
+                 await Future.delayed(const Duration(milliseconds: 500));
+                 await context.read<BleService>().sendCommand("TYPE", "cmd\n"); 
+              }),
+              _actionButton("WiFi Pass (Win)", () async {
+                 // Win+R, Powershell command to dump wifi passwords
+                 await context.read<BleService>().sendCommand("COMBO", "GUI,r"); 
+                 await Future.delayed(const Duration(milliseconds: 500));
+                 await context.read<BleService>().sendCommand("TYPE", "powershell -NoP -NoExit -c \"netsh wlan show profiles name=* key=clear\"\n"); 
+              }),
+              _actionButton("Sys Info", () async {
+                 await context.read<BleService>().sendCommand("COMBO", "GUI,r"); 
+                 await Future.delayed(const Duration(milliseconds: 500));
+                 await context.read<BleService>().sendCommand("TYPE", "cmd /k systeminfo\n"); 
+              }),
+              _actionButton("Fake Update", () async {
+                 await context.read<BleService>().sendCommand("COMBO", "GUI,r"); 
+                 await Future.delayed(const Duration(milliseconds: 500));
+                 await context.read<BleService>().sendCommand("TYPE", "https://fakeupdate.net/win10ue/\n");
+                 await Future.delayed(const Duration(seconds: 3)); // Wait for browser to load
+                 await context.read<BleService>().sendCommand("COMBO", "F11"); // Fullscreen
+              }),
+              _actionButton("Rickroll", () async {
+                 await context.read<BleService>().sendCommand("COMBO", "GUI,r"); 
+                 await Future.delayed(const Duration(milliseconds: 500));
+                 await context.read<BleService>().sendCommand("TYPE", "https://www.youtube.com/watch?v=dQw4w9WgXcQ\n");
+                 await Future.delayed(const Duration(seconds: 3));
+                 await context.read<BleService>().sendCommand("COMBO", "f"); // Youtube fullscreen often 'f'
+              }),
+              _actionButton("Desktop", () {
+                 context.read<BleService>().sendCommand("COMBO", "GUI,d");
+              }),
+              _actionButton("Close Win", () {
+                 context.read<BleService>().sendCommand("COMBO", "ALT,F4");
+              }),
+              _actionButton("Lock PC", () {
+                 context.read<BleService>().sendCommand("COMBO", "GUI,l");
+              }),
+              _actionButton("Copy", () {
+                 context.read<BleService>().sendCommand("COMBO", "CTRL,c");
+              }),
+              _actionButton("Paste", () {
+                 context.read<BleService>().sendCommand("COMBO", "CTRL,v");
+              }),
+               _actionButton("Task Mgr", () {
+                 context.read<BleService>().sendCommand("COMBO", "CTRL,SHIFT,ESC");
+              }),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 10),
+        
         Expanded(
           child: ListView(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(16),
             children: [
+              Text("Macros", style: Theme.of(context).textTheme.bodySmall),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
@@ -70,8 +185,8 @@ class _KeyboardScreenState extends State<KeyboardScreen> {
               ),
               const SizedBox(height: 16),
                
-              // Modifiers Visual Placeholder (Since FW doesn't support them explicitly yet)
-              Text("Modifiers (FW update required)", style: Theme.of(context).textTheme.bodySmall),
+              Text("Modifiers (Toggles)", style: Theme.of(context).textTheme.bodySmall),
+              const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
@@ -88,11 +203,32 @@ class _KeyboardScreenState extends State<KeyboardScreen> {
     );
   }
 
+  Widget _actionButton(String label, VoidCallback onPressed) {
+    return ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+        minimumSize: const Size(0, 32),
+      ),
+      onPressed: onPressed,
+      child: Text(label, style: const TextStyle(fontSize: 12)),
+    );
+  }
+
   Widget _modifierButton(String label) {
-    return  OutlinedButton(
+    final bool isActive = _activeModifiers.contains(label);
+    return  FilledButton.tonal(
+      style: FilledButton.styleFrom(
+        backgroundColor: isActive ? Theme.of(context).colorScheme.primary : null,
+        foregroundColor: isActive ? Theme.of(context).colorScheme.onPrimary : null,
+      ),
       onPressed: () {
-        // Placeholder for modifier logic
-        // context.read<BleService>().sendCommand("MOD", label); 
+        setState(() {
+           if (isActive) {
+             _activeModifiers.remove(label);
+           } else {
+             _activeModifiers.add(label);
+           }
+        });
       },
       child: Text(label),
     );
