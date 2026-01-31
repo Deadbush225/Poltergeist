@@ -52,15 +52,15 @@ class _KeyboardScreenState extends State<KeyboardScreen> {
     context.read<BleService>().sendCommand("COMBO", combo);
   }
 
-  Widget _keyButton(String label, String key) {
+  Widget _keyButton(String label, String key, {Size size = const Size(40, 32), double fontSize = 10}) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
-        minimumSize: const Size(40, 32),
+        minimumSize: size,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
       ),
       onPressed: () => _sendCombo(key),
-      child: Text(label, style: const TextStyle(fontSize: 10)),
+      child: Text(label, style: TextStyle(fontSize: fontSize)),
     );
   }
 
@@ -224,14 +224,14 @@ class _KeyboardScreenState extends State<KeyboardScreen> {
                   const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: [_keyButton("↑", "UP")],
+                    children: [_keyButton("⇡", "UP", fontSize: 35)],
                   ),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _keyButton("←", "LEFT"),
-                      _keyButton("↓", "DOWN"),
-                      _keyButton("→", "RIGHT"),
+                      _keyButton("⇠", "LEFT", fontSize: 35),
+                      _keyButton("⇣", "DOWN", fontSize: 35),
+                      _keyButton("⇢", "RIGHT", fontSize: 35),
                     ],
                   ),
                 ],
