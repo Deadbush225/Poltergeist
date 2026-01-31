@@ -149,7 +149,9 @@ class _MouseScreenState extends State<MouseScreen> {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
         minimumSize: const Size(120, 60),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(4),
+        ), // Rectangular
       ),
       onPressed: () {
         context.read<BleService>().sendCommand("CLICK", "$buttonCode");

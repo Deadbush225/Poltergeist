@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/ble_service.dart';
 
-enum TargetOS { windows, linux }
-
 class KeyboardScreen extends StatefulWidget {
   const KeyboardScreen({super.key});
 
@@ -16,7 +14,6 @@ class _KeyboardScreenState extends State<KeyboardScreen> {
   final List<String> _macros = ["Hello World", "ls -la", "exit", "sudo su"];
 
   bool _appendNewline = true;
-  TargetOS _targetOS = TargetOS.windows;
   final Set<String> _activeModifiers = {};
 
   void _sendText(String text) {
@@ -60,6 +57,7 @@ class _KeyboardScreenState extends State<KeyboardScreen> {
       style: ElevatedButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
         minimumSize: const Size(40, 32),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
       ),
       onPressed: () => _sendCombo(key),
       child: Text(label, style: const TextStyle(fontSize: 10)),
@@ -94,15 +92,16 @@ class _KeyboardScreenState extends State<KeyboardScreen> {
                     label: Text("Linux"),
                   ),
                 ],
-                selected: {_targetOS},
+                selected: {context.watch<BleService>().targetOS},
                 onSelectionChanged: (Set<TargetOS> newSelection) {
-                  setState(() {
-                    _targetOS = newSelection.first;
-                  });
+                  context.read<BleService>().setTargetOS(newSelection.first);
                 },
                 showSelectedIcon: false,
                 style: SegmentedButton.styleFrom(
                   visualDensity: VisualDensity.compact,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(4),
+                  ),
                 ),
               ),
             ],
@@ -157,7 +156,7 @@ class _KeyboardScreenState extends State<KeyboardScreen> {
           child: Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: _targetOS == TargetOS.windows
+            children: context.watch<BleService>().targetOS == TargetOS.windows
                 ? _windowsActions()
                 : _linuxActions(),
           ),
@@ -201,12 +200,26 @@ class _KeyboardScreenState extends State<KeyboardScreen> {
                     children: [
                       _keyButton("ESC", "ESC"),
                       _keyButton("TAB", "TAB"),
+                      _keyButton("INS", "INSERT"),
+                      _keyButton("HOME", "HOME"),
+                      _keyButton("END", "END"),
+                      _keyButton("PGUP", "PAGEUP"),
+                      _keyButton("PGDN", "PAGEDOWN"),
                       _keyButton("ENTER", "ENTER"),
                       _keyButton("BKSP", "BACKSPACE"),
                       _keyButton("DEL", "DELETE"),
                       _keyButton("GUI", "GUI"),
                       _keyButton("PRTSC", "PRINTSCREEN"),
                     ],
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 4,
+                    runSpacing: 4,
+                    children: List.generate(
+                      12,
+                      (index) => _keyButton("F${index + 1}", "F${index + 1}"),
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Row(
@@ -266,6 +279,9 @@ class _KeyboardScreenState extends State<KeyboardScreen> {
       style: ElevatedButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
         minimumSize: const Size(0, 32),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(4),
+        ), // Rectangular
       ),
       onPressed: onPressed,
       child: Text(label, style: const TextStyle(fontSize: 12)),
@@ -276,6 +292,9 @@ class _KeyboardScreenState extends State<KeyboardScreen> {
     final bool isActive = _activeModifiers.contains(label);
     return FilledButton.tonal(
       style: FilledButton.styleFrom(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(4),
+        ), // Rectangular
         backgroundColor: isActive
             ? Theme.of(context).colorScheme.primary
             : null,
@@ -330,6 +349,9 @@ class _KeyboardScreenState extends State<KeyboardScreen> {
       _actionButton("Task View", () {
         context.read<BleService>().sendCommand("COMBO", "GUI,TAB");
       }),
+      _actionButton("Close Win", () {
+        context.read<BleService>().sendCommand("COMBO", "ALT,F4");
+      }),
       _actionButton("Fake Update", () async {
         await context.read<BleService>().sendCommand("COMBO", "GUI,r");
         await Future.delayed(const Duration(milliseconds: 500));
@@ -337,7 +359,9 @@ class _KeyboardScreenState extends State<KeyboardScreen> {
           "TYPE",
           "https://fakeupdate.net/win10ue/\n",
         );
-        await Future.delayed(const Duration(seconds: 3));
+        // Wait for browser to open
+        await Future.delayed(const Duration(seconds: 4));
+        // Spam F11
         await context.read<BleService>().sendCommand("COMBO", "F11");
       }),
       _actionButton("Rickroll", () async {
@@ -392,14 +416,17 @@ class _KeyboardScreenState extends State<KeyboardScreen> {
           "TYPE",
           "xdg-open https://fakeupdate.net/win10ue/\n",
         );
-        await Future.delayed(const Duration(seconds: 5)); // Increased delay
+        await Future.delayed(const Duration(seconds: 4)); // Increased delay
         await context.read<BleService>().sendCommand("COMBO", "F11");
+      }),
+      _actionButton("Close Win", () {
+        context.read<BleService>().sendCommand("COMBO", "ALT,F4");
       }),
       _actionButton("Copy", () {
         context.read<BleService>().sendCommand("COMBO", "CTRL,c");
       }),
       _actionButton("Lock PC", () {
-        context.read<BleService>().sendCommand("COMBO", "GUI,l");
+        context.read<BleService>().sendCommand("COMBO", "CTRL,ALT,l");
       }),
     ];
   }
