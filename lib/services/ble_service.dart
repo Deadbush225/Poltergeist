@@ -22,12 +22,32 @@ class BleService extends ChangeNotifier {
 
   Stream<List<ScanResult>> get scanResults => FlutterBluePlus.scanResults;
   Stream<bool> get isScanning => FlutterBluePlus.isScanning;
+  bool _adapterOn = false;
+  bool get isAdapterOn => _adapterOn;
+
+  // Keep a subscription to the adapter state so UI can react reliably
+  void _watchAdapterState() {
+    FlutterBluePlus.adapterState.listen((state) {
+      final on = state == BluetoothAdapterState.on;
+      if (_adapterOn != on) {
+        _adapterOn = on;
+        notifyListeners();
+      }
+    });
+  }
 
   Future<void> init() async {
     // Check adapter state
+    // Start watching adapter state and update status accordingly
+    _watchAdapterState();
     if (await FlutterBluePlus.adapterState.first == BluetoothAdapterState.off) {
       _setStatus("Bluetooth is off");
+      _adapterOn = false;
+      notifyListeners();
       return;
+    } else {
+      _adapterOn = true;
+      notifyListeners();
     }
   }
 
@@ -46,7 +66,9 @@ class BleService extends ChangeNotifier {
         timeout: const Duration(seconds: 15),
       );
     } catch (e) {
-      _setStatus("Scan error: $e");
+      _setStatus("Scan Failed");
+      
+      // _setStatus("Scan error: $e");
     }
   }
 
