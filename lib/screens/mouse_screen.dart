@@ -28,6 +28,10 @@ class _MouseScreenState extends State<MouseScreen> {
     }
   }
 
+  void _sendClick(String btn) {
+    context.read<BleService>().sendCommand("CLICK", btn);
+  }
+
   void _sendMove() {
     // Scale down or up as needed.
     // Assuming device expects integers.
@@ -92,6 +96,8 @@ class _MouseScreenState extends State<MouseScreen> {
                 Expanded(
                   flex: 4,
                   child: GestureDetector(
+                    onTap: () => {_sendClick("1")}, // Left click on tap
+                    onLongPress: () => {_sendClick("2")}, // Right click on long press
                     onPanUpdate: _handlePan,
                     onPanEnd: (_) => _sendMove(), // Send remainder
                     child: Container(
@@ -111,6 +117,7 @@ class _MouseScreenState extends State<MouseScreen> {
                   child: Container(
                     decoration: BoxDecoration(
                       color: Colors.grey[700],
+                      borderRadius: BorderRadius.circular(16),
                       border: Border(
                         left: BorderSide(color: Colors.grey[900]!),
                       ),
