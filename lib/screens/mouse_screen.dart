@@ -14,10 +14,11 @@ class _MouseScreenState extends State<MouseScreen> {
   Timer? _throttleTimer;
   double _dx = 0;
   double _dy = 0;
+  double _sensitivity = 2.0; // Multiplier for mouse movement
 
   void _handlePan(DragUpdateDetails details) {
-    _dx += details.delta.dx;
-    _dy += details.delta.dy;
+    _dx += details.delta.dx * _sensitivity;
+    _dy += details.delta.dy * _sensitivity;
 
     if (_throttleTimer == null || !_throttleTimer!.isActive) {
       _throttleTimer = Timer(const Duration(milliseconds: 30), () {
@@ -53,6 +54,26 @@ class _MouseScreenState extends State<MouseScreen> {
   Widget build(BuildContext context) {
     return Column(
       children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Row(
+            children: [
+              const Text("Speed:"),
+              Expanded(
+                child: Slider(
+                  value: _sensitivity,
+                  min: 0.5,
+                  max: 5.0,
+                  onChanged: (val) {
+                    setState(() {
+                      _sensitivity = val;
+                    });
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
         Expanded(
           child: Container(
             width: double.infinity,

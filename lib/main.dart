@@ -162,6 +162,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       ),
       body: TabBarView(
         controller: _tabController,
+        physics: const NeverScrollableScrollPhysics(), // Disable swipe to switch tabs
         children: const [
           KeyboardScreen(),
           MouseScreen(),
