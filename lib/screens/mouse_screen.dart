@@ -15,6 +15,7 @@ class _MouseScreenState extends State<MouseScreen> {
   double _dx = 0;
   double _dy = 0;
   double _sensitivity = 2.0; // Multiplier for mouse movement
+  double _scrollAccumulator = 0;
 
   void _handlePan(DragUpdateDetails details) {
     _dx += details.delta.dx * _sensitivity;
@@ -28,26 +29,29 @@ class _MouseScreenState extends State<MouseScreen> {
   }
 
   void _sendMove() {
-      // Scale down or up as needed. 
-      // Assuming device expects integers.
-      int x = _dx.round();
-      int y = _dy.round();
-      if (x != 0 || y != 0) {
-        context.read<BleService>().sendCommand("MOVE", "$x,$y");
-        _dx = 0;
-        _dy = 0;
-      }
+    // Scale down or up as needed.
+    // Assuming device expects integers.
+    int x = _dx.round();
+    int y = _dy.round();
+    if (x != 0 || y != 0) {
+      context.read<BleService>().sendCommand("MOVE", "$x,$y");
+      _dx = 0;
+      _dy = 0;
+    }
   }
 
   void _handleScroll(DragUpdateDetails details) {
-     int scrollAmount = (details.delta.dy / 5).round(); 
-     if (scrollAmount != 0) {
-        // NOTE: The C++ code provided does not strictly handle SCROLL.
-        // Standard Arduino Mouse.move takes 3 args: x, y, wheel.
-        // But the C++ parser only reads 2.
-        // Sending a new command "SCROLL:amount" which the user can implement.
-        context.read<BleService>().sendCommand("SCROLL", "$scrollAmount");
-     }
+    _scrollAccumulator += details.delta.dy;
+    // Threshold of 10 pixels for 1 scroll unit to avoid sensitivity
+    const double threshold = 10.0;
+
+    if (_scrollAccumulator.abs() >= threshold) {
+      int steps = (_scrollAccumulator / threshold).truncate();
+      if (steps != 0) {
+        context.read<BleService>().sendCommand("SCROLL", "$steps");
+        _scrollAccumulator -= steps * threshold;
+      }
+    }
   }
 
   @override
@@ -93,7 +97,11 @@ class _MouseScreenState extends State<MouseScreen> {
                     child: Container(
                       color: Colors.transparent, // Hit test
                       child: Center(
-                        child: Icon(Icons.touch_app, size: 64, color: Colors.grey[600]),
+                        child: Icon(
+                          Icons.touch_app,
+                          size: 64,
+                          color: Colors.grey[600],
+                        ),
                       ),
                     ),
                   ),
@@ -103,7 +111,9 @@ class _MouseScreenState extends State<MouseScreen> {
                   child: Container(
                     decoration: BoxDecoration(
                       color: Colors.grey[700],
-                      border: Border(left: BorderSide(color: Colors.grey[900]!)),
+                      border: Border(
+                        left: BorderSide(color: Colors.grey[900]!),
+                      ),
                     ),
                     child: GestureDetector(
                       onVerticalDragUpdate: _handleScroll,

@@ -51,6 +51,21 @@ class _KeyboardScreenState extends State<KeyboardScreen> {
     }
   }
 
+  void _sendCombo(String combo) {
+    context.read<BleService>().sendCommand("COMBO", combo);
+  }
+
+  Widget _keyButton(String label, String key) {
+    return ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+        minimumSize: const Size(40, 32),
+      ),
+      onPressed: () => _sendCombo(key),
+      child: Text(label, style: const TextStyle(fontSize: 10)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -148,12 +163,68 @@ class _KeyboardScreenState extends State<KeyboardScreen> {
           ),
         ),
 
-        const SizedBox(height: 10),
+        const Divider(),
 
         Expanded(
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Text Control",
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _actionButton("Select All", () => _sendCombo("CTRL,a")),
+                      _actionButton("Copy", () => _sendCombo("CTRL,c")),
+                      _actionButton("Cut", () => _sendCombo("CTRL,x")),
+                      _actionButton("Paste", () => _sendCombo("CTRL,v")),
+                      _actionButton("Undo", () => _sendCombo("CTRL,z")),
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+                  Text(
+                    "Special Keys",
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _keyButton("ESC", "ESC"),
+                      _keyButton("TAB", "TAB"),
+                      _keyButton("ENTER", "ENTER"),
+                      _keyButton("BKSP", "BACKSPACE"),
+                      _keyButton("DEL", "DELETE"),
+                      _keyButton("GUI", "GUI"),
+                      _keyButton("PRTSC", "PRINTSCREEN"),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [_keyButton("↑", "UP")],
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _keyButton("←", "LEFT"),
+                      _keyButton("↓", "DOWN"),
+                      _keyButton("→", "RIGHT"),
+                    ],
+                  ),
+                ],
+              ),
+              const Divider(),
+
               Text("Macros", style: Theme.of(context).textTheme.bodySmall),
               Wrap(
                 spacing: 8,
@@ -228,13 +299,11 @@ class _KeyboardScreenState extends State<KeyboardScreen> {
   List<Widget> _windowsActions() {
     return [
       _actionButton("Term", () async {
-        // Win+R, "cmd", Enter
         await context.read<BleService>().sendCommand("COMBO", "GUI,r");
         await Future.delayed(const Duration(milliseconds: 500));
         await context.read<BleService>().sendCommand("TYPE", "cmd\n");
       }),
       _actionButton("WiFi Pass", () async {
-        // Win+R, Powershell command to dump wifi passwords
         await context.read<BleService>().sendCommand("COMBO", "GUI,r");
         await Future.delayed(const Duration(milliseconds: 500));
         await context.read<BleService>().sendCommand(
@@ -249,6 +318,17 @@ class _KeyboardScreenState extends State<KeyboardScreen> {
           "TYPE",
           "cmd /k systeminfo\n",
         );
+      }),
+      _actionButton("List Tasks", () async {
+        await context.read<BleService>().sendCommand("COMBO", "GUI,r");
+        await Future.delayed(const Duration(milliseconds: 500));
+        await context.read<BleService>().sendCommand(
+          "TYPE",
+          "cmd /k tasklist\n",
+        );
+      }),
+      _actionButton("Task View", () {
+        context.read<BleService>().sendCommand("COMBO", "GUI,TAB");
       }),
       _actionButton("Fake Update", () async {
         await context.read<BleService>().sendCommand("COMBO", "GUI,r");
@@ -285,16 +365,19 @@ class _KeyboardScreenState extends State<KeyboardScreen> {
   List<Widget> _linuxActions() {
     return [
       _actionButton("Terminal", () async {
-        // Try Ctrl+Alt+T
         await context.read<BleService>().sendCommand("COMBO", "CTRL,ALT,t");
       }),
       _actionButton("Run...", () async {
-        // Alt+F2
         await context.read<BleService>().sendCommand("COMBO", "ALT,F2");
       }),
+      _actionButton("List Tasks", () async {
+        await context.read<BleService>().sendCommand("COMBO", "CTRL,ALT,t");
+        await Future.delayed(const Duration(seconds: 1));
+        // 'top' is interactive, maybe just ps aux?
+        // user asked for "list, running task". top is good.
+        await context.read<BleService>().sendCommand("TYPE", "top\n");
+      }),
       _actionButton("Sys Info", () async {
-        // Assume Terminal is open or try to run in one.
-        // Since we can't key feedback, we'll assume user opened terminal first or we force it.
         await context.read<BleService>().sendCommand("COMBO", "CTRL,ALT,t");
         await Future.delayed(const Duration(seconds: 1));
         await context.read<BleService>().sendCommand(
@@ -303,22 +386,19 @@ class _KeyboardScreenState extends State<KeyboardScreen> {
         );
       }),
       _actionButton("Fake Update", () async {
-        await context.read<BleService>().sendCommand("COMBO", "ALT,F2"); // Run
+        await context.read<BleService>().sendCommand("COMBO", "ALT,F2");
         await Future.delayed(const Duration(milliseconds: 500));
         await context.read<BleService>().sendCommand(
           "TYPE",
           "xdg-open https://fakeupdate.net/win10ue/\n",
         );
-        await Future.delayed(const Duration(seconds: 3));
+        await Future.delayed(const Duration(seconds: 5)); // Increased delay
         await context.read<BleService>().sendCommand("COMBO", "F11");
       }),
       _actionButton("Copy", () {
-        // Linux Copy is often Ctrl+Shift+C in terminal, but Ctrl+C elsewhere.
-        // We will use standard Ctrl+C
         context.read<BleService>().sendCommand("COMBO", "CTRL,c");
       }),
       _actionButton("Lock PC", () {
-        // Gnome/Ubuntu
         context.read<BleService>().sendCommand("COMBO", "GUI,l");
       }),
     ];
