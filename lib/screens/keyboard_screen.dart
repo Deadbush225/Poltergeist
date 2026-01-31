@@ -52,11 +52,10 @@ class _KeyboardScreenState extends State<KeyboardScreen> {
     context.read<BleService>().sendCommand("COMBO", combo);
   }
 
-  Widget _keyButton(String label, String key, {Size size = const Size(40, 32), double fontSize = 10}) {
+  Widget _keyButton(String label, String key, {double fontSize = 12}) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
-        minimumSize: size,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
       ),
       onPressed: () => _sendCombo(key),
@@ -139,7 +138,7 @@ class _KeyboardScreenState extends State<KeyboardScreen> {
 
         // Quick Actions / Macros
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+          padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 16.0),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -152,13 +151,13 @@ class _KeyboardScreenState extends State<KeyboardScreen> {
         ),
 
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 0),
           child: Wrap(
-            spacing: 8,
-            runSpacing: 8,
+            spacing: 6.0,
+            alignment: WrapAlignment.start,
             children: context.watch<BleService>().targetOS == TargetOS.windows
-                ? _windowsActions()
-                : _linuxActions(),
+          ? _windowsActions()
+          : _linuxActions(),
           ),
         ),
 
@@ -178,7 +177,6 @@ class _KeyboardScreenState extends State<KeyboardScreen> {
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
-                    runSpacing: 8,
                     children: [
                       _actionButton("Select All", () => _sendCombo("CTRL,a")),
                       _actionButton("Copy", () => _sendCombo("CTRL,c")),
@@ -194,9 +192,16 @@ class _KeyboardScreenState extends State<KeyboardScreen> {
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                   const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
+                  GridView.count(
+                    shrinkWrap: true, 
+                    physics: const NeverScrollableScrollPhysics(),
+
+                    crossAxisCount: 4,
+                    mainAxisSpacing: 6,
+                    crossAxisSpacing: 6,
+
+                    childAspectRatio: 1.6,
+
                     children: [
                       _keyButton("ESC", "ESC"),
                       _keyButton("TAB", "TAB"),
@@ -213,9 +218,13 @@ class _KeyboardScreenState extends State<KeyboardScreen> {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 4,
-                    runSpacing: 4,
+                  GridView.count(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisCount: 4,
+                    mainAxisSpacing: 6,
+                    crossAxisSpacing: 6,
+                    childAspectRatio: 1.6,
                     children: List.generate(
                       12,
                       (index) => _keyButton("F${index + 1}", "F${index + 1}"),
@@ -224,10 +233,13 @@ class _KeyboardScreenState extends State<KeyboardScreen> {
                   const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
+                    spacing: 6,
                     children: [_keyButton("⇡", "UP", fontSize: 35)],
                   ),
+                  const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
+                    spacing: 6,
                     children: [
                       _keyButton("⇠", "LEFT", fontSize: 35),
                       _keyButton("⇣", "DOWN", fontSize: 35),
@@ -241,7 +253,6 @@ class _KeyboardScreenState extends State<KeyboardScreen> {
               Text("Macros", style: Theme.of(context).textTheme.bodySmall),
               Wrap(
                 spacing: 8,
-                runSpacing: 8,
                 children: _macros
                     .map(
                       (macro) => ActionChip(
@@ -267,6 +278,7 @@ class _KeyboardScreenState extends State<KeyboardScreen> {
                   _modifierButton("GUI"),
                 ],
               ),
+              const SizedBox(height: 16),
             ],
           ),
         ),
@@ -277,8 +289,8 @@ class _KeyboardScreenState extends State<KeyboardScreen> {
   Widget _actionButton(String label, VoidCallback onPressed) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-        minimumSize: const Size(0, 32),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        // minimumSize: const Size(0, 32),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(4),
         ), // Rectangular
