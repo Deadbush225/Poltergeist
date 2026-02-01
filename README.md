@@ -32,6 +32,14 @@
 
 <img src="./docs/Mobile App - Showcase.png"></img>
 
+## Demo
+
+<div align="center">
+  <a href="https://youtu.be/ZeInsAehJPg">
+    <img src="https://img.youtube.com/vi/ZeInsAehJPg/0.jpg" alt="Watch the video">
+  </a>
+</div>
+
 ## About The Project
 
 Poltergeist is a Bluetooth HID controller that transforms your Android device into a multi-purpose remote. By emulating standard keyboard and mouse profiles (HID), it enables wireless control of computers and other devices without requiring additional drivers or helper software.
