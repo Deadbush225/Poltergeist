@@ -1,0 +1,9 @@
+{
+	"APPNAME": "Poltergeist",
+	"VERSION": "1.0.0",
+	"DESCRIPTION": "A mobile application for scanning, printing, and managing documents on the go.",
+	"ASSETS_PATHS": ["./build/app/outputs/apk/release/"],
+	"ASSETS_EXTENSIONS": [".apk"],
+	"ASSETS_IGNORE_REGEX": ["unaligned", "debug", "mapping"],
+	"REPO": "https://github.com/Deadbush225/Poltergeist"
+}
