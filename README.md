@@ -35,12 +35,12 @@
 ## Demo
 
 <div align="center">
-  <a href="https://youtu.be/szWWaZAEm3s">
+  <a href="https://youtu.be/lK9Pki6Ntwo">
     <img src="https://img.shields.io/badge/Watch_Demo-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="Watch Demo" width="200">
   </a>
   <br>
-  <a href="https://youtu.be/szWWaZAEm3s">
-    <img src="https://img.youtube.com/vi/szWWaZAEm3s/maxresdefault.jpg" alt="Poltergeist Demo" width="1200">
+  <a href="https://youtu.be/lK9Pki6Ntwo">
+    <img src="https://img.youtube.com/vi/lK9Pki6Ntwo/maxresdefault.jpg" alt="Poltergeist Demo" width="1200">
   </a>
 </div>
 
